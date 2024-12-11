@@ -34,6 +34,7 @@ fun HomePage() {
     var isShowSocialDialog by remember { mutableStateOf(false) }
     var socialType by remember { mutableStateOf(SocialType.QQ) }
     BoxWithConstraints {
+        val maxW = maxWidth
         val min = minOf(maxWidth, maxHeight)
         val dynamicHeight = min * 2f / 3f
         val dynamicWidth = dynamicHeight * 16f / 9f
@@ -45,45 +46,61 @@ fun HomePage() {
 
             Background()
 
+            if (maxW < 800.dp) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.rem_icon),
+                        contentDescription = null,
+                        modifier = Modifier.weight(1f)
+                    )
 
-
-            Row(
-                modifier = Modifier.width(dynamicWidth).height(dynamicHeight).clip(RoundedCornerShape(20.dp))
-                    .background(
-                        Color.White.copy(alpha = 0.5f)
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                UserInfo(
-                    modifier = Modifier.weight(2f).fillMaxHeight().padding(horizontal = 20.dp),
-                    onClick = { action ->
-                        when (action) {
-                            is Action.SocialAction -> {
-                                when (action.socialType) {
-                                    SocialType.EMAIL,
-                                    SocialType.BLOG,
-                                    SocialType.GITHUB -> window.open(action.socialType.url)
-
-                                    SocialType.BILI -> {}
-                                    SocialType.QQ,
-                                    SocialType.WECHAT -> {
-                                        socialType = action.socialType
-                                        isShowSocialDialog = true
-                                    }
-
+                    UserInfo(
+                        modifier = Modifier.weight(2f).fillMaxHeight().padding(horizontal = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        onClick = { action ->
+                            actionEvent(action) {
+                                if (socialType == SocialType.QQ || socialType == SocialType.WECHAT) {
+                                    socialType = it
+                                    isShowSocialDialog = true
                                 }
                             }
                         }
-
-                    }
-                )
-                Image(
-                    painter = painterResource(Res.drawable.rem_icon),
-                    contentDescription = null,
-                    modifier = Modifier.weight(1f)
-                )
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.width(dynamicWidth).height(dynamicHeight)
+                        .padding(horizontal = 20.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Color.White.copy(alpha = 0.5f)
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    UserInfo(
+                        modifier = Modifier.weight(2f).fillMaxHeight().padding(horizontal = 20.dp),
+                        onClick = { action ->
+                            actionEvent(action) {
+                                if (socialType == SocialType.QQ || socialType == SocialType.WECHAT) {
+                                    socialType = it
+                                    isShowSocialDialog = true
+                                }
+                            }
+                        }
+                    )
+                    Image(
+                        painter = painterResource(Res.drawable.rem_icon),
+                        contentDescription = null,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
+
+
 
             AnimatedVisibility(visible = isShowSocialDialog) {
                 Dialog(onDismissRequest = {
@@ -104,10 +121,27 @@ fun HomePage() {
 
 }
 
+private fun actionEvent(action: Action, callback: (socialType: SocialType) -> Unit) {
+    when (action) {
+        is Action.SocialAction -> {
+            when (action.socialType) {
+                SocialType.EMAIL,
+                SocialType.BLOG,
+                SocialType.GITHUB -> window.open(action.socialType.url)
+
+                SocialType.BILI -> {}
+                SocialType.QQ,
+                SocialType.WECHAT -> callback(action.socialType)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterialApi::class)
 @Composable
 private fun UserInfo(
     modifier: Modifier = Modifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     onClick: (action: Action) -> Unit
 ) {
     val skills = remember {
@@ -124,7 +158,8 @@ private fun UserInfo(
     }
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = horizontalAlignment
     ) {
         Text(text = "Lao Hei", style = MaterialTheme.typography.h3, fontWeight = FontWeight.Bold)
 
